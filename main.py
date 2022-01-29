@@ -46,14 +46,19 @@ class Config(tk.Frame):
         self.save_to = tk.Entry(self, width=22)
         self.save_to.grid(row=2, column=1, sticky='w')
 
-        self.save_to_btn = tk.Button(self, bd=1, text="Browse")
+        self.save_to_btn = tk.Button(self, bd=1, text="Browse", command=self.browse)
         self.save_to_btn.grid(row=2, column=2, padx=2)
 
         self.preview = tk.Button(self, text="Preview", bd=1, width=12)
         self.preview.grid(row=3, column=0, pady=5)
 
-        self.generate = tk.Button(self, text="Generate", bd=1, width=25)
+        self.generate = tk.Button(self, text="Generate", bd=1, width=25, command=kwargs["generate"])
         self.generate.grid(row=3, column=1, columnspan=2, sticky="nw", padx=2, pady=5)
+
+    def browse(self):
+        self.save_to.delete(0, 'end')
+        f = tk.filedialog.askdirectory()
+        self.save_to.insert(0, f)
 
 class MainGrid(tk.Frame):
     def __init__(self, master, **kwargs):
@@ -78,23 +83,26 @@ class MainGrid(tk.Frame):
         self.file_container = ScrollView(self.file_main_container, width=300, height=300, scroll=False)
         self.file_container.pack()
 
-        self.config_frame = Config(self)
+        self.config_frame = Config(self, generate=kwargs["generate"])
         self.config_frame.place(x=300, y=350)
+
+        self.progress = ttk.Progressbar(self, length=585)
+        self.progress.place(x=0, y=455)
 
 
 class PngFiles(tk.Frame):
     def __init__(self, master, path):
-        tk.Frame.__init__(self, master, bd=1, relief=RAISED, padx=5)
+        tk.Frame.__init__(self, master, bd=1, relief=RAISED)
 
         self.path = path
         self.activeVar = tk.IntVar(value=1)
 
-        self.label = tk.Label(self, text=self.path.split('/')[-1], anchor='w', width=13, justify=LEFT)
+        self.label = tk.Label(self, text=self.path.split('/')[-1], anchor='w', width=15, justify=LEFT)
         self.label.grid(row=0, column=0)
 
         self.rarity = tk.Scale(self, orient=HORIZONTAL, label="Rarity", from_=1, to=10)
         self.rarity.set(10)
-        self.rarity.grid(row=0, column=1, padx=10)
+        self.rarity.grid(row=0, column=1)
 
         self.active = tk.Checkbutton(self, variable=self.activeVar)
         self.active.grid(row=0, column=2)
@@ -114,7 +122,7 @@ class Layer(tk.Frame):
         self.folder_layer_label = tk.Label(self.file_main_container, text=self.path.split('/')[-1])
         self.folder_layer_label.pack()
 
-        self.file_container = ScrollView(self.file_main_container, width=300, height=250, scroll=True)
+        self.file_container = ScrollView(self.file_main_container, width=260, height=300, scroll=True)
         self.file_container.pack()
 
         for i in [f for f in os.listdir(self.path) if os.path.splitext(f)[-1] == '.png']:
@@ -210,7 +218,7 @@ class App(tk.Tk):
 
         self.layer_folders = []
 
-        self.main_frame = MainGrid(self)
+        self.main_frame = MainGrid(self, generate=self.generate)
         self.main_frame.pack(fill=BOTH, expand="yes")
 
         
@@ -218,6 +226,7 @@ class App(tk.Tk):
         volume = int(self.main_frame.config_frame.collecion_size.get()) # collection size
         save_to_path = self.main_frame.config_frame.save_to.get()
         file_name = self.main_frame.config_frame.file_name_input.get()
+        progress = self.main_frame.progress
 
         if len(self.layer_folders) == 0:
             messagebox.showwarning("Warning", "Please create layers")
@@ -255,11 +264,11 @@ class App(tk.Tk):
             # commplete the image
             img1.save('{}/{}{}.png'.format(save_to_path, file_name, str(i+1)))
 
-            self.progress['value'] = 100 / (volume / (i+1))
+            progress['value'] = 100 / (volume / (i+1))
             self.update_idletasks()
 
         messagebox.showinfo("Successful", "Generating NFT has been completed")
-        self.progress['value'] = 0
+        progress['value'] = 0
 
 
     def add_layer(self):
