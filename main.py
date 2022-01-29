@@ -77,7 +77,7 @@ class MainGrid(tk.Frame):
         self.file_main_container = tk.Frame(self.file_section_frame)
         self.file_main_container.grid(row=0,  column=0, sticky="nsew")
 
-        self.label = tk.Label(self.file_main_container, text="No Folder Selected")
+        self.label = tk.Label(self.file_main_container, text="Please add new layer", pady=10)
         self.label.pack()
 
         self.file_container = ScrollView(self.file_main_container, width=300, height=300, scroll=False)
@@ -97,12 +97,12 @@ class PngFiles(tk.Frame):
         self.path = path
         self.activeVar = tk.IntVar(value=1)
 
-        self.label = tk.Label(self, text=self.path.split('/')[-1], anchor='w', width=15, justify=LEFT)
+        self.label = tk.Label(self, text=self.path.split('/')[-1], anchor='w', width=18, justify=LEFT)
         self.label.grid(row=0, column=0)
 
         self.rarity = tk.Scale(self, orient=HORIZONTAL, label="Rarity", from_=1, to=10)
         self.rarity.set(10)
-        self.rarity.grid(row=0, column=1)
+        self.rarity.grid(row=0, column=1, padx=10)
 
         self.active = tk.Checkbutton(self, variable=self.activeVar)
         self.active.grid(row=0, column=2)
@@ -119,10 +119,10 @@ class Layer(tk.Frame):
         self.file_main_container = tk.Frame(self.file_frame)
         self.file_main_container.grid(row=0,  column=0, sticky="nsew")
 
-        self.folder_layer_label = tk.Label(self.file_main_container, text=self.path.split('/')[-1])
+        self.folder_layer_label = tk.Label(self.file_main_container, text=self.path.split('/')[-1], font=("Roboto", 10), pady=10)
         self.folder_layer_label.pack()
 
-        self.file_container = ScrollView(self.file_main_container, width=260, height=300, scroll=True)
+        self.file_container = ScrollView(self.file_main_container, width=284, height=300, scroll=True)
         self.file_container.pack()
 
         for i in [f for f in os.listdir(self.path) if os.path.splitext(f)[-1] == '.png']:
@@ -130,7 +130,7 @@ class Layer(tk.Frame):
             file.pack(anchor='w')
             self.files.append(file)
 
-        self.layer_name = tk.Button(self, text=self.path.split('/')[-1], bd=1, padx=5, height=2, width=22, anchor="w", justify=LEFT)
+        self.layer_name = tk.Button(self, text=self.path.split('/')[-1], bd=1, padx=5, height=2, width=22, anchor="w", justify=LEFT, command=self.select_self)
         self.layer_name.grid(row=0, column=0, sticky='nsew')
         self.layer_name.bind("<Enter>", self.enter_label)
         self.layer_name.bind("<Leave>", self.leave_label)
@@ -162,7 +162,7 @@ class Layer(tk.Frame):
         self.master.reupdate()
 
     def select_self(self):
-        pass
+        self.file_main_container.tkraise()
 
 class LayerSectionFrame(tk.Frame):
     def __init__(self, master):
@@ -172,11 +172,11 @@ class LayerSectionFrame(tk.Frame):
         self.frame = tk.Frame(self, padx=10, pady=10)
         self.frame.pack(fill='x', expand=1)
 
-        self.label = tk.Label(self.frame, text="Layers", width=15, anchor='w',  justify="left")
+        self.label = tk.Label(self.frame, text="Layers", width=20, anchor='w',  justify="left")
         self.label.config(font=('Roboto', 13))
         self.label.grid(row=0, column=0, sticky='w')
 
-        self.add_layer_btn = tk.Button(self.frame, text="Add Layer", width=10, command=self.master.master.add_layer)
+        self.add_layer_btn = tk.Button(self.frame, text="Add Layer", bd=1, width=10, command=self.master.master.add_layer)
         self.add_layer_btn.grid(row=0, column=1, sticky='e')
 
         self.layerscrollview = ScrollView(self, width=255, height=400, scroll=True)
@@ -275,23 +275,19 @@ class App(tk.Tk):
         f = tk.filedialog.askdirectory()
         frame = self.main_frame.layer_section_frame.layerscrollview
 
-        if os.path.isdir(f):
+        # check if directory exist and has png files
+        if os.path.isdir(f) and len([x for x in os.listdir(f) if os.path.splitext(x)[-1] == '.png']) > 0:
             new_layer = Layer(frame.container, path=f, file_frame=self.main_frame.file_section_frame)#, self.second_frame_right, self.left_container.reupdate, self)
             new_layer.pack(padx=5)
 
             self.layer_folders.append(new_layer)
             self.selected_leyer = new_layer
         
-        # update scrollbar
-        frame.reupdate()
+            # update scrollbar
+            frame.reupdate()
+        else:
+            messagebox.showerror("Empty FIle", "There is no png file in this folder")
 
-        # self.file_path_label.config(text=f)
-
-        # ####### update the changes in UI specially the scrollbars
-        
-        # self.update()
-        # self.left_container.reupdate()
-        # new_layer.file_frame.reupdate()
 
 if __name__ == "__main__":
     app = App()
