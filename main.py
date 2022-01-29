@@ -67,7 +67,7 @@ class MyMenu(Menu):
         self.file_menu = Menu(self, tearoff=0)
         self.file_menu.add_command(label="New Project")
         self.file_menu.add_command(label="Open Project")
-        self.file_menu.add_command(label="Save")
+        self.file_menu.add_command(label="Save", command=self.master.save_project)
         self.file_menu.add_command(label="Save As", command=self.master.save_project_as)
 
         self.add_cascade(label='File', menu=self.file_menu, underline=0)
@@ -262,7 +262,7 @@ class App(tk.Tk):
         self.config(padx=10)
 
         self.project_name = ''
-        self.priject_path = ''
+        self.project_path = ''
 
         self.menu = MyMenu(self)
         self.config(menu=self.menu)
