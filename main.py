@@ -4,24 +4,74 @@ import tkinter.filedialog
 import os
 from PIL import Image
 import random
+import pickle
 
 
 HIGHLIGHT = "grey"
 NORMAL = "#F0F0F0"
 DANGER = "red"
 
+
+class SaveAsTop(tk.Toplevel):
+    def __init__(self, *args, **kwargs):
+        super(SaveAsTop, self).__init__(args[0], padx=20, pady=40)
+        self.geometry("400x200")
+        self.title("Save Project")
+
+        self.input_frame = tk.Frame(self)
+        self.input_frame.place(x=20, y=0)
+
+        self.location_label = tk.Label(self.input_frame, text="Path")
+        self.location_label.grid(row=0, column=0, sticky="w")
+
+        self.location_entry = tk.Entry(self.input_frame, width=30)
+        self.location_entry.grid(row=0, column=1, sticky="w", padx=5)
+
+        self.browse_btn = tk.Button(self.input_frame, text="Browse", bd=1, command=self.browse)
+        self.browse_btn.grid(row=0, column=2, sticky="w")
+
+        self.label = tk.Label(self.input_frame, text="Filename")
+        self.label.grid(row=1, column=0, sticky="w")
+
+        self.file_name_entry = tk.Entry(self.input_frame, width=40)
+        self.file_name_entry.grid(row=1, column=1, columnspan=2, sticky="n", padx=5)
+
+        self.btn_frame = tk.Frame(self)
+        self.btn_frame.place(x=160, y=100)
+
+        self.cancel_btn = tk.Button(self.btn_frame, text="Cancel", width=10, bd=1, command=self.cancel)
+        self.cancel_btn.grid(row=1, column=3)
+
+        self.save_btn = tk.Button(self.btn_frame, text="Save", width=10, bd=1, command=self.save_project)
+        self.save_btn.grid(row=1, column=4)
+
+    def browse(self):
+        f = tk.filedialog.askdirectory()
+        self.location_entry.insert(0, f)
+        self.master.project_path = f
+        self.tkraise()
+    
+    def cancel(self):
+        self.destroy()
+
+    def save_project(self):
+        if self.location_entry.get() != "":
+            self.master.project_name = self.file_name_entry.get()
+            self.master.save_project()
+            self.destroy()
+
 class MyMenu(Menu):
     def __init__(self, master):
         super(MyMenu, self).__init__(master)
-
+        self.master = master
         self.file_menu = Menu(self, tearoff=0)
-        self.file_menu.add_command(label="New")
+        self.file_menu.add_command(label="New Project")
+        self.file_menu.add_command(label="Open Project")
+        self.file_menu.add_command(label="Save")
+        self.file_menu.add_command(label="Save As", command=self.master.save_project_as)
 
         self.add_cascade(label='File', menu=self.file_menu, underline=0)
 
-# class FileFrame(tk.Frame):
-#     def __init__(self, *args, **kwargs):
-#         super(FileFrame, self).__init__(args[0])
 
 class Config(tk.Frame):
     def __init__(self, *args, **kwargs):
@@ -65,8 +115,6 @@ class MainGrid(tk.Frame):
         super(MainGrid, self).__init__(master, relief=GROOVE, bd=1)
 
         self.master = master
-        # self.left = tk.Frame(self, width="100", height="400")
-        # self.left.pack(fill=BOTH, expand="yes")
 
         self.layer_section_frame = LayerSectionFrame(self)
         self.layer_section_frame.place(x=0, y=0)
@@ -156,7 +204,6 @@ class Layer(tk.Frame):
     def delete_layer(self):
         self.destroy()
         self.file_main_container.destroy()
-        # self.file_container.destroy()
 
         # update scrollbar
         self.master.reupdate()
@@ -213,6 +260,10 @@ class App(tk.Tk):
         self.resizable(0, 0)
         self.config(pady=10)
         self.config(padx=10)
+
+        self.project_name = ''
+        self.priject_path = ''
+
         self.menu = MyMenu(self)
         self.config(menu=self.menu)
 
@@ -220,6 +271,39 @@ class App(tk.Tk):
 
         self.main_frame = MainGrid(self, generate=self.generate)
         self.main_frame.pack(fill=BOTH, expand="yes")
+
+    def save_project(self):
+        
+        if self.project_path != "":
+
+            data = {
+                "project":self.project_name,
+                "folders":[
+                    {
+                        "layer":f.path,
+                        "file":[
+                            {
+                                "path":x.path,
+                                "active":x.activeVar.get(),
+                                "rarity":x.rarity.get()
+                            } for x in f.files
+                        ]
+                    } for f in self.layer_folders
+                ],
+                "file_name":self.main_frame.config_frame.file_name_input.get(),
+                "save_to_path": self.main_frame.config_frame.save_to.get(),
+                "volume":int(self.main_frame.config_frame.collecion_size.get())
+            }
+
+            with open("{}/{}.sc".format(self.project_path, self.project_name), "wb") as project:
+                pickle.dump(data, project)
+        
+        else:
+            self.save_project_as()
+
+
+    def save_project_as(self):
+        save = SaveAsTop(self)
 
         
     def generate(self):
