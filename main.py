@@ -1,3 +1,4 @@
+from argparse import FileType
 import tkinter as tk
 from tkinter import BOTH, FLAT, GROOVE, LEFT, RAISED, VERTICAL, HORIZONTAL, RIGHT, RIDGE, ttk, Menu, messagebox
 import tkinter.filedialog
@@ -10,6 +11,8 @@ import pickle
 HIGHLIGHT = "grey"
 NORMAL = "#F0F0F0"
 DANGER = "red"
+
+LAYER_SCROLL_VIEW = None
 
 
 class SaveAsTop(tk.Toplevel):
@@ -66,7 +69,7 @@ class MyMenu(Menu):
         self.master = master
         self.file_menu = Menu(self, tearoff=0)
         self.file_menu.add_command(label="New Project")
-        self.file_menu.add_command(label="Open Project")
+        self.file_menu.add_command(label="Open Project", command=master.load_project)
         self.file_menu.add_command(label="Save", command=self.master.save_project)
         self.file_menu.add_command(label="Save As", command=self.master.save_project_as)
 
@@ -90,7 +93,7 @@ class Config(tk.Frame):
         self.collecion_size = tk.Entry(self, width=30)
         self.collecion_size.grid(row=1, column=1, columnspan=2, sticky='nw')
 
-        self.save_to_label = tk.Label(self, text="Save to")
+        self.save_to_label = tk.Label(self, text="Destination")
         self.save_to_label.grid(row=2, column=0, sticky="w")
 
         self.save_to = tk.Entry(self, width=22)
@@ -206,13 +209,15 @@ class Layer(tk.Frame):
         self.file_main_container.destroy()
 
         # update scrollbar
-        self.master.reupdate()
+        # self.master.reupdate()
+        LAYER_SCROLL_VIEW.reupdate()
 
     def select_self(self):
         self.file_main_container.tkraise()
 
 class LayerSectionFrame(tk.Frame):
     def __init__(self, master):
+        global LAYER_SCROLL_VIEW
         super(LayerSectionFrame, self).__init__(master, width=200, relief=GROOVE, bd=1)
         self.master = master
 
@@ -228,6 +233,8 @@ class LayerSectionFrame(tk.Frame):
 
         self.layerscrollview = ScrollView(self, width=255, height=400, scroll=True)
         self.layerscrollview.pack(fill='y')
+
+        LAYER_SCROLL_VIEW = self.layerscrollview
 
 class ScrollView(tk.Frame):
     def __init__(self, *args, **kwargs):
@@ -291,12 +298,14 @@ class App(tk.Tk):
                     } for f in self.layer_folders
                 ],
                 "file_name":self.main_frame.config_frame.file_name_input.get(),
-                "save_to_path": self.main_frame.config_frame.save_to.get(),
+                "destination": self.main_frame.config_frame.save_to.get(),
                 "volume":int(self.main_frame.config_frame.collecion_size.get())
             }
 
             with open("{}/{}.sc".format(self.project_path, self.project_name), "wb") as project:
                 pickle.dump(data, project)
+
+            messagebox.showinfo("Success", "Your project has been saved")
         
         else:
             self.save_project_as()
@@ -304,6 +313,21 @@ class App(tk.Tk):
 
     def save_project_as(self):
         save = SaveAsTop(self)
+
+    def load_project(self):
+        f = tk.filedialog.askopenfilename()
+        if f.split('.')[-1] != "sc":
+            messagebox.showerror("Innvalid File", "Unsupported file")
+            return
+
+        if len(self.layer_folders) > 0:
+            for i in self.layer_folders:
+                i.delete_layer()
+
+        with open(f, "rb") as raw:
+            data = pickle.load(raw)
+
+        print(data)
 
         
     def generate(self):
