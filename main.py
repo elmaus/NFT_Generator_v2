@@ -413,7 +413,6 @@ class App(tk.Tk):
             # get random image from a layer base on rarity value
             img1 = Image.open(random.choices(images1, weights=images1_rarity)[0], mode="r", formats=None)
 
-
             for j in range(1, len(self.layer_folders)):
                 images2 = [f.path for f in self.layer_folders[j].files if f.activeVar.get() == 1]
                 images2_rarity = [m.rarity.get() for m in self.layer_folders[j].files if m.activeVar.get() == 1]
@@ -424,7 +423,6 @@ class App(tk.Tk):
                 intermediate = Image.alpha_composite(img1, img2)
                 img1 = intermediate
                 self.update_idletasks()
-
 
             # commplete the image
             img1.save('{}/{}{}.png'.format(save_to_path, file_name, str(i+1)))
@@ -448,20 +446,17 @@ class App(tk.Tk):
             img1 = intermediate
 
         img1.save("preview.png")
+
         prev_win = tk.Toplevel(self)
 
-
         image = Image.open("preview.png")
-
 
         rezised_img = image.resize((200, 200), Image.ANTIALIAS)
         new_image = ImageTk.PhotoImage(rezised_img)
 
-        
         canvas = tk.Label(prev_win, image=new_image)
         canvas.image = new_image
         canvas.pack()
-
 
 
     def add_layer(self):
