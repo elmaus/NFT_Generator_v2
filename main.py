@@ -76,6 +76,11 @@ class MyMenu(Menu):
 
         self.add_cascade(label='File', menu=self.file_menu, underline=0)
 
+        self.edit_menu = Menu(self, tearoff=0)
+        self.edit_menu.add_command(label="Theme")
+
+        self.add_cascade(label="Edit", menu=self.edit_menu, underline=0)
+
 
 class Config(tk.Frame):
     def __init__(self, *args, **kwargs):
