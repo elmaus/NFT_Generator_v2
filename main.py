@@ -194,8 +194,6 @@ class Layer(tk.Frame):
             self.files.append(file)
         
     def add_file(self, *args, **kwargs):
-        # rarity = kwargs["rarity"]
-        # active = kwargs['active']
 
         file = PngFiles(self.file_container.container, args[0])
         file.pack(anchor='w')
@@ -279,7 +277,7 @@ class ScrollView(tk.Frame):
 class App(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
-        self.title("NFT Generator")
+        self.title("NFT Generator - untitled")
         self.geometry("608x500")
         self.resizable(0, 0)
         self.config(pady=10)
