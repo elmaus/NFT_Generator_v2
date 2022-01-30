@@ -12,6 +12,7 @@ HIGHLIGHT = "grey"
 NORMAL = "#F0F0F0"
 DANGER = "red"
 
+APP = None
 LAYER_SCROLL_VIEW = None
 
 
@@ -176,11 +177,6 @@ class Layer(tk.Frame):
         self.file_container = ScrollView(self.file_main_container, width=284, height=300, scroll=True)
         self.file_container.pack()
 
-        for i in [f for f in os.listdir(self.path) if os.path.splitext(f)[-1] == '.png']:
-            file = PngFiles(self.file_container.container, f'{self.path}/{i}')
-            file.pack(anchor='w')
-            self.files.append(file)
-
         self.layer_name = tk.Button(self, text=self.path.split('/')[-1], bd=1, padx=5, height=2, width=22, anchor="w", justify=LEFT, command=self.select_self)
         self.layer_name.grid(row=0, column=0, sticky='nsew')
         self.layer_name.bind("<Enter>", self.enter_label)
@@ -191,6 +187,27 @@ class Layer(tk.Frame):
         self.delete_btn.bind("<Enter>", self.enter_delete_btn)
         self.delete_btn.bind("<Leave>", self.leave_delete_btn)
 
+    def add_files(self):
+        for i in [f for f in os.listdir(self.path) if os.path.splitext(f)[-1] == '.png']:
+            file = PngFiles(self.file_container.container, f'{self.path}/{i}')
+            file.pack(anchor='w')
+            self.files.append(file)
+        
+    def add_file(self, *args, **kwargs):
+        # rarity = kwargs["rarity"]
+        # active = kwargs['active']
+
+        file = PngFiles(self.file_container.container, args[0])
+        file.pack(anchor='w')
+        file.rarity.set(kwargs['rarity'])
+
+        if kwargs["active"]:
+            file.active.select()
+        else:
+            file.active.deselect()
+        
+        self.files.append(file)
+        
     def leave_label(self, instance):
         self.layer_name.config(bg=NORMAL)
 
@@ -205,12 +222,13 @@ class Layer(tk.Frame):
 
 
     def delete_layer(self):
+        global APP
         self.destroy()
         self.file_main_container.destroy()
-
-        # update scrollbar
-        # self.master.reupdate()
+        APP.layer_folders.pop(APP.layer_folders.index(self))
         LAYER_SCROLL_VIEW.reupdate()
+
+        print(APP.layer_folders)
 
     def select_self(self):
         self.file_main_container.tkraise()
@@ -288,7 +306,7 @@ class App(tk.Tk):
                 "folders":[
                     {
                         "layer":f.path,
-                        "file":[
+                        "files":[
                             {
                                 "path":x.path,
                                 "active":x.activeVar.get(),
@@ -314,21 +332,56 @@ class App(tk.Tk):
     def save_project_as(self):
         save = SaveAsTop(self)
 
+    
+    def refresh(self):
+        global LAYER_SCROLL_VIEW
+
+        # delete all layers and filse
+        for file in self.layer_folders:
+            file.destroy()
+            self.layer_folders.pop(self.layer_folders.index(file))
+            LAYER_SCROLL_VIEW.reupdate()
+
+        self.main_frame.config_frame.collecion_size.delete(0, "end") # collection size
+        self.main_frame.config_frame.save_to.delete(0, "end")
+        self.main_frame.config_frame.file_name_input.delete(0,"end")
+
+
     def load_project(self):
+        global LAYER_SCROLL_VIEW
+
         f = tk.filedialog.askopenfilename()
+
+        if f == "":
+            return
+            
         if f.split('.')[-1] != "sc":
             messagebox.showerror("Innvalid File", "Unsupported file")
             return
 
-        if len(self.layer_folders) > 0:
-            for i in self.layer_folders:
-                i.delete_layer()
+        self.refresh()
 
         with open(f, "rb") as raw:
             data = pickle.load(raw)
 
-        print(data)
+        for d in data["folders"]:
+            new_layer = Layer(LAYER_SCROLL_VIEW.container, path=d["layer"], file_frame=self.main_frame.file_section_frame)#, self.second_frame_right, self.left_container.reupdate, self)
+            new_layer.pack(padx=5)
 
+            self.layer_folders.append(new_layer)
+            self.selected_leyer = new_layer
+        
+            # update scrollbar
+            LAYER_SCROLL_VIEW.reupdate()
+
+            # load file rarity and visibility
+            for file in d["files"]:
+                new_layer.add_file(file['path'], rarity=file['rarity'], active=file["active"])
+
+        # load project configuration
+        self.main_frame.config_frame.collecion_size.insert(0, str(["volume"])) # collection size
+        self.main_frame.config_frame.save_to.insert(0, data["destination"])
+        self.main_frame.config_frame.file_name_input.insert(0, data["file_name"])
         
     def generate(self):
         volume = int(self.main_frame.config_frame.collecion_size.get()) # collection size
@@ -390,6 +443,9 @@ class App(tk.Tk):
 
             self.layer_folders.append(new_layer)
             self.selected_leyer = new_layer
+
+            # add all files for this folder to the app:
+            new_layer.add_files()
         
             # update scrollbar
             frame.reupdate()
@@ -399,4 +455,5 @@ class App(tk.Tk):
 
 if __name__ == "__main__":
     app = App()
+    APP = app
     app.mainloop()
