@@ -69,7 +69,7 @@ class MyMenu(Menu):
         super(MyMenu, self).__init__(master)
         self.master = master
         self.file_menu = Menu(self, tearoff=0)
-        self.file_menu.add_command(label="New Project")
+        self.file_menu.add_command(label="New Project", command=master.refresh)
         self.file_menu.add_command(label="Open Project", command=master.load_project)
         self.file_menu.add_command(label="Save", command=self.master.save_project)
         self.file_menu.add_command(label="Save As", command=self.master.save_project_as)
@@ -223,12 +223,11 @@ class Layer(tk.Frame):
 
     def delete_layer(self):
         global APP
-        self.destroy()
-        self.file_main_container.destroy()
         APP.layer_folders.pop(APP.layer_folders.index(self))
-        LAYER_SCROLL_VIEW.reupdate()
+        self.file_main_container.destroy()
+        self.destroy()
 
-        print(APP.layer_folders)
+        LAYER_SCROLL_VIEW.reupdate()
 
     def select_self(self):
         self.file_main_container.tkraise()
@@ -337,10 +336,8 @@ class App(tk.Tk):
         global LAYER_SCROLL_VIEW
 
         # delete all layers and filse
-        for file in self.layer_folders:
-            file.destroy()
-            self.layer_folders.pop(self.layer_folders.index(file))
-            LAYER_SCROLL_VIEW.reupdate()
+        while len(self.layer_folders) > 0:
+            self.layer_folders[0].delete_layer()
 
         self.main_frame.config_frame.collecion_size.delete(0, "end") # collection size
         self.main_frame.config_frame.save_to.delete(0, "end")
@@ -379,7 +376,7 @@ class App(tk.Tk):
                 new_layer.add_file(file['path'], rarity=file['rarity'], active=file["active"])
 
         # load project configuration
-        self.main_frame.config_frame.collecion_size.insert(0, str(["volume"])) # collection size
+        self.main_frame.config_frame.collecion_size.insert(0, data["volume"]) # collection size
         self.main_frame.config_frame.save_to.insert(0, data["destination"])
         self.main_frame.config_frame.file_name_input.insert(0, data["file_name"])
         
