@@ -285,7 +285,7 @@ class App(tk.Tk):
         self.config(pady=10)
         self.config(padx=10)
 
-        self.project_name = ''
+        self.project_name = 'untitled'
         self.project_path = ''
 
         self.menu = MyMenu(self)
@@ -321,6 +321,8 @@ class App(tk.Tk):
 
             with open("{}/{}.sc".format(self.project_path, self.project_name), "wb") as project:
                 pickle.dump(data, project)
+
+            self.title(f"NFT Generator - {self.project_name}")
 
             messagebox.showinfo("Success", "Your project has been saved")
         
@@ -379,7 +381,8 @@ class App(tk.Tk):
         self.main_frame.config_frame.collecion_size.insert(0, data["volume"]) # collection size
         self.main_frame.config_frame.save_to.insert(0, data["destination"])
         self.main_frame.config_frame.file_name_input.insert(0, data["file_name"])
-        
+
+        self.title("NFT Generator - {}".format(data["project"]))        
     def generate(self):
         volume = int(self.main_frame.config_frame.collecion_size.get()) # collection size
         save_to_path = self.main_frame.config_frame.save_to.get()
