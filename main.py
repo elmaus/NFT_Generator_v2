@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import BOTH, FLAT, GROOVE, LEFT, RAISED, VERTICAL, HORIZONTAL, RIGHT, RIDGE, ttk, Menu, messagebox
 import tkinter.filedialog
 import os
-from PIL import Image
+from PIL import Image, ImageTk
 import random
 import pickle
 
@@ -69,7 +69,7 @@ class MyMenu(Menu):
         super(MyMenu, self).__init__(master)
         self.master = master
         self.file_menu = Menu(self, tearoff=0)
-        self.file_menu.add_command(label="New Project", command=master.refresh)
+        self.file_menu.add_command(label="New Project", command=master.new_project)
         self.file_menu.add_command(label="Open Project", command=master.load_project)
         self.file_menu.add_command(label="Save", command=self.master.save_project)
         self.file_menu.add_command(label="Save As", command=self.master.save_project_as)
@@ -80,7 +80,6 @@ class MyMenu(Menu):
 class Config(tk.Frame):
     def __init__(self, *args, **kwargs):
         super(Config, self).__init__(args[0])
-
         
         self.file_name_label = tk.Label(self, text="File name")
         self.file_name_label.grid(row=0, column=0, sticky='nw')
@@ -103,7 +102,7 @@ class Config(tk.Frame):
         self.save_to_btn = tk.Button(self, bd=1, text="Browse", command=self.browse)
         self.save_to_btn.grid(row=2, column=2, padx=2)
 
-        self.preview = tk.Button(self, text="Preview", bd=1, width=12)
+        self.preview = tk.Button(self, text="Preview", bd=1, width=12, command=args[0].master.preview)
         self.preview.grid(row=3, column=0, pady=5)
 
         self.generate = tk.Button(self, text="Generate", bd=1, width=25, command=kwargs["generate"])
@@ -294,6 +293,13 @@ class App(tk.Tk):
         self.main_frame = MainGrid(self, generate=self.generate)
         self.main_frame.pack(fill=BOTH, expand="yes")
 
+
+    def new_project(self):
+        self.project_name = 'untitled'
+        self.title(f'NFT Generator - {self.project_name}')
+        self.refresh()
+
+
     def save_project(self):
         
         if self.project_path != "":
@@ -430,6 +436,34 @@ class App(tk.Tk):
         progress['value'] = 0
 
 
+    def preview(self):
+        images = [img.path for img in self.layer_folders[0].files]
+        img1 = Image.open(random.choice(images))
+
+        for i in range(1, len(self.layer_folders)):
+            images = [img.path for img in self.layer_folders[i].files]
+            img2 = Image.open(random.choice(images))
+            
+            intermediate = Image.alpha_composite(img1, img2)
+            img1 = intermediate
+
+        img1.save("preview.png")
+        prev_win = tk.Toplevel(self)
+
+
+        image = Image.open("preview.png")
+
+
+        rezised_img = image.resize((200, 200), Image.ANTIALIAS)
+        new_image = ImageTk.PhotoImage(rezised_img)
+
+        
+        canvas = tk.Label(prev_win, image=new_image)
+        canvas.image = new_image
+        canvas.pack()
+
+
+
     def add_layer(self):
         f = tk.filedialog.askdirectory()
         frame = self.main_frame.layer_section_frame.layerscrollview
@@ -449,6 +483,7 @@ class App(tk.Tk):
             frame.reupdate()
         else:
             messagebox.showerror("Empty FIle", "There is no png file in this folder")
+
 
 
 if __name__ == "__main__":
